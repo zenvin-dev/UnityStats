@@ -1,0 +1,16 @@
+{
+	"name": "com.zenvin.stats",
+	"version": "0.0.1",
+	"displayName": "Stats System",
+	"description": "Simple generic stats system for Unity.",
+	"unity": "2020.1",
+	"author": {
+		"name": "Zenvin",
+		"email": "zenvin@outlook.de"
+	},
+	"hideInEditor": false,
+	"keywords": [
+		"stats"
+	],
+	"license": "LICENSE.md"
+}

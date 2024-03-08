@@ -1,0 +1,18 @@
+{
+    "name": "Zenvin.Stats.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:d9ee6b5c8cae4f54faeb22c67902f97e"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
