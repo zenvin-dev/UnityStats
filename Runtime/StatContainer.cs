@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,10 +7,10 @@ namespace Zenvin.Stats {
 	/// Component for holding stat values of a single entity.
 	/// </summary>
 	[DisallowMultipleComponent]
-	public class StatContainer : MonoBehaviour {
+	public sealed class StatContainer : MonoBehaviour {
 		private Dictionary<Stat, StatInstance> statDict;
 
-		private List<StatInstance> stats = new List<StatInstance> ();
+		internal List<StatInstance> stats = new List<StatInstance> ();
 
 
 		/// <summary>
@@ -125,6 +126,77 @@ namespace Zenvin.Stats {
 			return TryGet<TStatInstance> (identifier, out var val) ? val : null;
 		}
 
+		/// <summary>
+		/// Checks whether the container has an instance of a given <see cref="Stat"/>.
+		/// </summary>
+		public bool ContainsStat (Stat stat) {
+			if (stat == null)
+				return false;
+			if (statDict != null)
+				return statDict.ContainsKey (stat);
+
+			return TryGetInstanceIndex (stat, out _);
+		}
+
+
+		internal void AddStat (Stat stat, Type instanceType) {
+			if (stat == null || instanceType == null || ContainsStat (stat))
+				return;
+			if (!typeof (StatInstance<>).MakeGenericType (stat.GetValueType ()).IsAssignableFrom (instanceType) || instanceType.ContainsGenericParameters)
+				return;
+
+			var instance = gameObject.AddComponent (instanceType) as StatInstance;
+			instance.SetStat (stat);
+			instance.hideFlags = HideFlags.HideInInspector;
+
+			stats.Add (instance);
+			statDict?.Add (stat, instance);
+		}
+
+		internal void RemoveStat (Stat stat) {
+			if (stat == null)
+				return;
+
+			statDict?.Remove (stat);
+			for (int i = 0; i < stats.Count; i++) {
+				var instance = stats[i];
+
+				if (instance != null && instance.GetStat () != stat) {
+					continue;
+				}
+
+				if (instance != null) {
+					if (Application.isPlaying) {
+						Destroy (instance);
+					} else {
+						DestroyImmediate (instance, false);
+					}
+				}
+
+				stats.RemoveAt (i);
+				i--;
+			}
+		}
+
+		internal void RemoveStat (int index) {
+			if (index < 0 || index >= stats.Count)
+				return;
+
+			if (statDict != null) {
+				var instance = stats[index];
+				if (instance != null) {
+					statDict.Remove (instance.GetStat ());
+
+					if (Application.isPlaying) {
+						Destroy (instance);
+					} else {
+						DestroyImmediate (instance, false);
+					}
+				}
+			}
+			stats.RemoveAt (index);
+		}
+
 
 		private void InitStatDict () {
 			if (statDict != null)
@@ -137,6 +209,22 @@ namespace Zenvin.Stats {
 					statDict.Add (stat, statInstance);
 				}
 			}
+		}
+
+		private bool TryGetInstanceIndex (Stat stat, out int index) {
+			index = -1;
+
+			if (stat == null)
+				return false;
+
+			for (int i = 0; i < stats.Count; i++) {
+				var instance = stats[i];
+				if (instance != null && instance.GetStat () == stat) {
+					index = i;
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 }

@@ -51,6 +51,11 @@ namespace Zenvin.Stats {
 				ProcessValueChange (ref this.value);
 			}
 		}
+		/// <summary>
+		/// The default value of the instance. <br></br>
+		/// Will be returned by <see cref="Value"/>, until that has been set at least once.
+		/// </summary>
+		public T DefaultValue => defaultValue;
 
 		/// <inheritdoc/>
 		public sealed override bool IsValid => Stat != null;

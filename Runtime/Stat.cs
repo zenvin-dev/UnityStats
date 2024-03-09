@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Zenvin.Stats {
@@ -14,6 +15,8 @@ namespace Zenvin.Stats {
 		/// </summary>
 		public string Identifier { get => identifier; private set => identifier = value; }
 		internal Color AccentColor { get => accentColor; private set => accentColor = value; }
+
+		internal abstract Type GetValueType ();
 	}
 
 	/// <summary>
@@ -27,5 +30,7 @@ namespace Zenvin.Stats {
 		/// <param name="value"> The value of the stat. </param>
 		/// <param name="instance"> The <see cref="StatInstance{TValue}"/> holding the value. </param>
 		internal protected virtual void ProcessValueChange (StatInstance<TValue> instance, ref TValue value) { }
+
+		internal sealed override Type GetValueType () => typeof (TValue);
 	}
 }
