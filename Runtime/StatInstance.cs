@@ -19,32 +19,36 @@ namespace Zenvin.Stats {
 		/// If implemented, returns the value of a <see cref="StatInstance{T}"/>.
 		/// </summary>
 		public abstract object GetValue ();
+
+		internal abstract void SetStat (Stat stat);
 	}
 
 	/// <summary>
 	/// Generic component for holding the value of a stat on a given entity. <br></br>
 	/// Instances should only be created through <see cref="StatContainer"/>.
 	/// </summary>
-	/// <typeparam name="TValue"> The type of value wrapped by the stat and the instance. </typeparam>
-	public abstract class StatInstance<TValue> : StatInstance {
-		private TValue value;
+	/// <typeparam name="T"> The type of value wrapped by the stat and the instance. </typeparam>
+	public abstract class StatInstance<T> : StatInstance {
+		private bool valueSet = false;
+		private T value;
 
-		[SerializeField] private Stat<TValue> stat;
-		[SerializeField] private TValue defaultValue;
+		[SerializeField, HideInInspector] private Stat<T> stat;
+		[SerializeField] private T defaultValue;
 
 		/// <summary>
 		/// A reference to the <see cref="Stat{T}"/> that the instance references.
 		/// </summary>
-		public Stat<TValue> Stat => stat;
+		public Stat<T> Stat => stat;
 		/// <summary>
 		/// Gets or sets the current value of the instance.
 		/// </summary>
-		public TValue Value {
+		public T Value {
 			get {
-				return value;
+				return valueSet ? value : defaultValue;
 			}
 			set {
 				this.value = value;
+				valueSet = true;
 				if (Stat != null) {
 					Stat.ProcessValueChange (this, ref this.value);
 				}
@@ -65,14 +69,22 @@ namespace Zenvin.Stats {
 		public sealed override Stat GetStat () => Stat;
 		/// <inheritdoc/>
 		public sealed override object GetValue () => Value;
+		/// <inheritdoc/>
+		public override string ToString () => $"Default: {defaultValue}";
 
 		/// <inheritdoc/>
-		protected virtual void ProcessValueChange (ref TValue value) { }
+		protected virtual void ProcessValueChange (ref T value) { }
+
+
+		internal sealed override void SetStat (Stat stat) {
+			this.stat = stat as Stat<T>;
+		}
+
 
 		/// <summary>
 		/// Implicitly converts a stat instance to the value it wraps.
 		/// </summary>
-		public static implicit operator TValue (StatInstance<TValue> instance) {
+		public static implicit operator T (StatInstance<T> instance) {
 			return instance.Value;
 		}
 	}
