@@ -10,7 +10,7 @@ namespace Zenvin.Stats {
 	public sealed class StatContainer : MonoBehaviour {
 		private Dictionary<Stat, StatInstance> statDict;
 
-		internal List<StatInstance> stats = new List<StatInstance> ();
+		[SerializeField] internal List<StatInstance> stats = new List<StatInstance> ();
 
 
 		/// <summary>
