@@ -18,9 +18,13 @@ namespace Zenvin.Stats {
 
 		private GUIContent removeContent;
 		private GUIContent RemoveContent => removeContent ??= EditorGUIUtility.IconContent ("d_Toolbar Minus");
-
 		private GUIStyle removeStyle;
-		private GUIStyle RemoveStyle => removeStyle ??= new GUIStyle (EditorStyles.label) { padding = new RectOffset(), margin = new RectOffset() };
+		private GUIStyle RemoveStyle => removeStyle ??= new GUIStyle (EditorStyles.label) { padding = new RectOffset (), margin = new RectOffset () };
+
+		private GUIContent selectContent;
+		private GUIContent SelectContent => selectContent ??= EditorGUIUtility.IconContent ("d_ScriptableObject On Icon");
+		private GUIStyle selectStyle;
+		private GUIStyle SelectStyle => selectStyle ??= new GUIStyle (EditorStyles.label) { padding = new RectOffset (2, 2, 2, 2), margin = new RectOffset () };
 
 
 		public override void OnInspectorGUI () {
@@ -47,7 +51,7 @@ namespace Zenvin.Stats {
 				}
 
 				var editor = GetEditor (instance);
-				editor.Expanded = DrawStatHeader (instance, editor.Expanded, out var remove);
+				editor.Expanded = DrawStatHeader (instance, editor.Expanded, evt, out var remove, out var select, out var context);
 				if (editor.Expanded) {
 					editor.Editor.DrawDefaultInspector ();
 				}
@@ -60,11 +64,15 @@ namespace Zenvin.Stats {
 					i--;
 					continue;
 				}
+				if (select) {
+					Selection.activeObject = instance.GetStat ();
+				}
 			}
 		}
 
-		private bool DrawStatHeader (StatInstance instance, bool expanded, out bool remove) {
-			var size = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+		private bool DrawStatHeader (StatInstance instance, bool expanded, Event evt, out bool remove, out bool select, out bool context) {
+			var space = EditorGUIUtility.standardVerticalSpacing;
+			var size = EditorGUIUtility.singleLineHeight + space;
 
 			GetHeaderRect (
 				size,
@@ -82,12 +90,16 @@ namespace Zenvin.Stats {
 			var text = string.IsNullOrEmpty (instanceText) ? stat.Identifier : $"{stat.Identifier} [{instanceText}]";
 
 			var foldRect = new Rect (controlRect);
-			foldRect.width -= size;
-			var btnRect = new Rect (controlRect);
-			btnRect.x += foldRect.width;
-			btnRect.width = size;
+			foldRect.width -= size * 2f + space;
+			var removeBtnRect = new Rect (controlRect);
+			removeBtnRect.x += foldRect.width + size;
+			removeBtnRect.width = size;
+			var selectBtnRect = new Rect (removeBtnRect);
+			selectBtnRect.x -= size + space;
 
-			remove = GUI.Button (btnRect, RemoveContent, RemoveStyle);
+			remove = GUI.Button (removeBtnRect, RemoveContent, RemoveStyle);
+			select = GUI.Button (selectBtnRect, SelectContent, SelectStyle);
+			context = evt.type == EventType.ContextClick && foldRect.Contains (evt.mousePosition);
 			return EditorGUI.Foldout (foldRect, expanded, new GUIContent (text), true, FoldoutStyle);
 		}
 
