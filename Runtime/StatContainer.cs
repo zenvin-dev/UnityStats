@@ -182,18 +182,17 @@ namespace Zenvin.Stats {
 			if (index < 0 || index >= stats.Count)
 				return;
 
-			if (statDict != null) {
-				var instance = stats[index];
-				if (instance != null) {
-					statDict.Remove (instance.GetStat ());
+			var instance = stats[index];
+			if (instance != null) {
+				statDict?.Remove (instance.GetStat ());
 
-					if (Application.isPlaying) {
-						Destroy (instance);
-					} else {
-						DestroyImmediate (instance, false);
-					}
+				if (Application.isPlaying) {
+					Destroy (instance);
+				} else {
+					DestroyImmediate (instance, false);
 				}
 			}
+
 			stats.RemoveAt (index);
 		}
 
