@@ -1,16 +1,19 @@
 {
 	"name": "com.zenvin.stats",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"displayName": "Stats System",
-	"description": "Simple generic stats system for Unity.",
+	"description": "Simple generic stats system for Unity.\nUses components for serializing stat instances.",
 	"unity": "2020.1",
 	"author": {
 		"name": "Zenvin",
 		"email": "zenvin@outlook.de"
 	},
+	"dependencies": {},
 	"hideInEditor": false,
 	"keywords": [
-		"stats"
+		"stats",
+		"generic"
 	],
-	"license": "LICENSE.md"
+	"license": "LICENSE.md",
+	"samples": []
 }
