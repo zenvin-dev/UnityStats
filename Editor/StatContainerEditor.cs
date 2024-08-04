@@ -29,19 +29,20 @@ namespace Zenvin.Stats {
 
 		public override void OnInspectorGUI () {
 			var container = target as StatContainer;
+			var evt = Event.current;
 
 			EditorGUILayout.LabelField ("Stats", EditorStyles.miniLabel);
-			DrawStatList (container);
+			DrawStatList (container, evt);
 
 			GUILayout.Space (7);
 
 			var dropRect = EditorGUILayout.GetControlRect (GUILayout.Height (EditorGUIUtility.singleLineHeight * 2));
 			GUI.Box (dropRect, "Drop Stat object to add Instance", DropZoneStyle);
-			HandleDragAndDrop (container, dropRect);
+			HandleDragAndDrop (container, dropRect, evt);
 		}
 
 
-		private void DrawStatList (StatContainer container) {
+		private void DrawStatList (StatContainer container, Event evt) {
 			for (int i = 0; i < container.stats.Count; i++) {
 				var instance = container.stats[i];
 				if (instance == null || !instance.IsValid) {
@@ -62,7 +63,13 @@ namespace Zenvin.Stats {
 				if (remove) {
 					container.RemoveStat (i);
 					i--;
+					EditorUtility.SetDirty (target);
 					continue;
+				}
+				if (context) {
+					Repaint ();
+					ShowContextMenu (container, i);
+					break;
 				}
 				if (select) {
 					Selection.activeObject = instance.GetStat ();
@@ -118,8 +125,7 @@ namespace Zenvin.Stats {
 			accentRect.width = accentWidth;
 		}
 
-		private void HandleDragAndDrop (StatContainer container, Rect dropRect) {
-			var evt = Event.current;
+		private void HandleDragAndDrop (StatContainer container, Rect dropRect, Event evt) {
 			if (evt.type != EventType.DragExited)
 				return;
 			if (!dropRect.Contains (evt.mousePosition))
@@ -139,35 +145,32 @@ namespace Zenvin.Stats {
 				return;
 			}
 
-			var menu = new GenericMenu ();
-
 			var statType = createInstanceData.Stat.GetValueType ();
-			var baseType = typeof (StatInstance<>).MakeGenericType (statType);
-			var types = TypeCache.GetTypesDerivedFrom (baseType);
-			var foundTypes = 0;
-			Type singleType = null;
+			var types = GetInstanceTypesForStatType (statType);
 
+			if (types.Count == 0) {
+				Debug.Log ($"Did not find any Instance types for stat type '{statType}'.");
+				return;
+			}
+
+			if (types.Count == 1) {
+				createInstanceData.Container.AddStat (createInstanceData.Stat, types[0]);
+				EditorUtility.SetDirty (target);
+				return;
+			}
+
+			var menu = new GenericMenu ();
 			menu.AddDisabledItem (new GUIContent ($"Choose Instance type for {createInstanceData.Stat.Identifier}"));
 			foreach (var type in types) {
-				if (!type.IsAbstract && !type.ContainsGenericParameters) {
-					menu.AddItem (new GUIContent ($"{type.Namespace}/{type.Name}"), false, CreateInstanceMenuHandler, type);
-					foundTypes++;
-					singleType = type;
-				}
+				menu.AddItem (new GUIContent ($"{type.Namespace}.{type.Name}"), false, CreateInstanceMenuHandler, type);
 			}
-
-			if (foundTypes == 1) {
-				createInstanceData.Container.AddStat (createInstanceData.Stat, singleType);
-			} else if (foundTypes > 1) {
-				menu.ShowAsContext ();
-			} else {
-				Debug.Log ($"Did not find any types for stat type '{statType}'.");
-			}
+			menu.ShowAsContext ();
 		}
 
 		private void CreateInstanceMenuHandler (object userData) {
 			if (userData is Type type) {
 				createInstanceData.Container.AddStat (createInstanceData.Stat, type);
+				EditorUtility.SetDirty (target);
 			}
 		}
 
@@ -188,6 +191,67 @@ namespace Zenvin.Stats {
 				var editor = GetEditor (instance);
 				editor.Expanded = instance.GetStat () == stat;
 			}
+		}
+
+		private void ShowContextMenu (StatContainer container, int statIndex) {
+			if (container == null)
+				return;
+			if (statIndex < 0 || statIndex >= container.stats.Count)
+				return;
+
+			var menu = new GenericMenu ();
+
+			AddItem (menu, "Move Up", MoveUp, false, statIndex > 0);
+			AddItem (menu, "Move Down", MoveDown, false, statIndex < container.stats.Count - 1);
+			menu.AddSeparator ("");
+			AddItem (menu, "Remove Stat", Remove, false, true);
+
+			menu.ShowAsContext ();
+
+
+			void MoveUp () {
+				var stat = container.stats[statIndex];
+				container.stats.RemoveAt (statIndex);
+				container.stats.Insert (statIndex - 1, stat);
+				EditorUtility.SetDirty (target);
+			}
+
+			void MoveDown () {
+				var stat = container.stats[statIndex];
+				container.stats.RemoveAt (statIndex);
+				container.stats.Insert (statIndex + 1, stat);
+				EditorUtility.SetDirty (target);
+			}
+
+			void Remove () {
+				container.RemoveStat (statIndex);
+				EditorUtility.SetDirty (target);
+			}
+		}
+
+		private void AddItem (GenericMenu menu, string label, GenericMenu.MenuFunction callback, bool on = false, bool enabled = true) {
+			var content = new GUIContent (label);
+			if (!enabled) {
+				menu.AddDisabledItem (content, on);
+				return;
+			}
+
+			menu.AddItem (content, on, callback);
+		}
+
+		private List<Type> GetInstanceTypesForStatType (Type statType) {
+			var list = new List<Type> ();
+
+			var baseType = typeof (StatInstance<>).MakeGenericType (statType);
+			var types = TypeCache.GetTypesDerivedFrom (baseType);
+
+			foreach (var type in types) {
+				if (!type.IsAbstract && !type.ContainsGenericParameters) {
+					list.Add (type);
+				}
+			}
+
+			return list;
 		}
 
 
