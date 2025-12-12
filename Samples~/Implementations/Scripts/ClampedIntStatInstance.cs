@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Zenvin.Stats {
+namespace Zenvin.Stats.Samples {
 	public class ClampedIntStatInstance : IntStatInstance {
 		[SerializeField] private bool clampMin = true;
 		[SerializeField] private int minValue = 0;
